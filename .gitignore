@@ -1,0 +1,5 @@
+.env
+*.import
+.godot/
+node_modules/
+*.tmp
