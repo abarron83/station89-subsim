@@ -23,9 +23,8 @@ func _ready():
 	mqtt.message_received.connect(_on_message_received)
 	add_child(mqtt)
 	await get_tree().create_timer(1.0).timeout
+	mqtt.subscribe(SUBSCRIBE_TOPIC)
 	print("Sonar: Online")
-	_subscribe(SUBSCRIBE_TOPIC)
-	# Spawn a fake contact for testing
 	contacts.append({"angle": 45.0, "distance": 0.6, "age": 0.0})
 	contacts.append({"angle": 210.0, "distance": 0.35, "age": 0.0})
 
@@ -80,16 +79,3 @@ func _on_message_received(topic: String, payload: String):
 	if topic == "submarine/game/state":
 		game_state = payload
 		print("Sonar: Game state -> ", game_state)
-
-func _subscribe(topic: String):
-	var t = topic.to_utf8_buffer()
-	var packet = PackedByteArray()
-	packet.append(0x82)
-	packet.append(2 + 2 + t.size() + 1)
-	packet.append_array([0x00, 0x01])
-	packet.append(0x00)
-	packet.append(t.size())
-	packet.append_array(t)
-	packet.append(0x00)
-	mqtt.socket.put_data(packet)
-	print("Sonar: Subscribed to ", topic)
