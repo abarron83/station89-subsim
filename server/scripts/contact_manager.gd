@@ -8,7 +8,7 @@ var contacts: Dictionary = {}
 var _spawn_timer: float = 0.0
 const SPAWN_INTERVAL = 8.0
 var _update_timer: float = 0.0
-const UPDATE_INTERVAL = 0.5
+const UPDATE_INTERVAL = 0.25
 
 var mqtt: Node
 
@@ -56,7 +56,7 @@ func _spawn_contact():
 		"x": cos(angle) * distance,
 		"y": sin(angle) * distance,
 		"heading": randf() * 360.0,
-		"speed": randf_range(5.0, 25.0),
+		"speed": randf_range(20.0, 60.0) if type != "submarine" else randf_range(5.0, 15.0),
 		"type": type,
 		"noise": randf_range(0.3, 1.0) if type != "submarine" else randf_range(0.1, 0.4)
 	}

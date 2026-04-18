@@ -15,6 +15,10 @@ var contacts: Dictionary = {}
 var center: Vector2
 var radius: float
 
+# Track previous positions for movement trails
+var contact_history: Dictionary = {}
+const MAX_HISTORY = 4
+
 # Contact colors by type
 const TYPE_COLORS = {
 	"surface": Color(0.0, 1.0, 0.0),
@@ -49,6 +53,9 @@ func _process(delta):
 				to_remove.append(id)
 		for id in to_remove:
 			contacts.erase(id)
+		for id in to_remove:
+			contacts.erase(id)
+			contact_history.erase(id)
 
 	# Light up contacts as sweep passes over them
 	for id in contacts:
@@ -94,12 +101,27 @@ func _draw():
 	var sweep_end = center + Vector2(cos(sweep_rad), sin(sweep_rad)) * radius
 	draw_line(center, sweep_end, Color(0.0, 1.0, 0.2, 0.9), 2.0)
 
-	# Contacts
+	# Contact trails and dots
 	for id in contacts:
 		var c = contacts[id]
+		var base_color = TYPE_COLORS.get(c.type, Color(0.0, 1.0, 0.0))
 		var contact_rad = deg_to_rad(c.bearing)
 		var contact_pos = center + Vector2(cos(contact_rad), sin(contact_rad)) * radius * c.distance
-		var base_color = TYPE_COLORS.get(c.type, Color(0.0, 1.0, 0.0))
+
+		# Draw movement trail
+		if contact_history.has(id) and contact_history[id].size() > 0:
+			var history = contact_history[id]
+			for i in range(history.size()):
+				var h = history[i]
+				var h_rad = deg_to_rad(h.bearing)
+				var h_pos = center + Vector2(cos(h_rad), sin(h_rad)) * radius * h.distance
+				var fade = (float(i + 1) / float(history.size())) * 0.4
+				draw_circle(h_pos, 2.5, Color(base_color.r, base_color.g, base_color.b, fade))
+			# Draw line connecting trail to current pos
+			var last = history[history.size() - 1]
+			var last_rad = deg_to_rad(last.bearing)
+			var last_pos = center + Vector2(cos(last_rad), sin(last_rad)) * radius * last.distance
+			draw_line(last_pos, contact_pos, Color(base_color.r, base_color.g, base_color.b, 0.2), 1.0)
 
 		if c.lit:
 			var fade = clamp(1.0 - (c.lit_timer / 2.0), 0.1, 1.0)
@@ -107,8 +129,10 @@ func _draw():
 			draw_circle(contact_pos, 10.0 * c.strength, Color(base_color.r, base_color.g, base_color.b, fade * 0.3))
 			# Core dot
 			draw_circle(contact_pos, 5.0, Color(base_color.r, base_color.g, base_color.b, fade))
+			# Type indicator ring for submarines
+			if c.type == "submarine":
+				draw_arc(contact_pos, 9.0, 0, TAU, 16, Color(base_color.r, base_color.g, base_color.b, fade * 0.6), 1.0)
 		else:
-			# Dim ghost of last known position
 			draw_circle(contact_pos, 3.0, Color(base_color.r, base_color.g, base_color.b, 0.15))
 
 	# Outer ring
@@ -142,10 +166,24 @@ func _on_message_received(topic: String, payload: String):
 		if data == null:
 			return
 		var id = data.id
+		var new_bearing = float(data.bearing)
+		var new_distance = float(data.distance)
+
+		if not contact_history.has(id):
+			contact_history[id] = []
+
+		if contacts.has(id):
+			var old = contacts[id]
+			if abs(old.bearing - new_bearing) > 0.5 or abs(old.distance - new_distance) > 0.005:
+				contact_history[id].append({"bearing": old.bearing, "distance": old.distance})
+				if contact_history[id].size() > MAX_HISTORY:
+					contact_history[id].pop_front()
+
 		if not contacts.has(id):
 			contacts[id] = {"age": 0, "lit": false, "lit_timer": 0.0}
-		contacts[id].bearing = float(data.bearing)
-		contacts[id].distance = float(data.distance)
+
+		contacts[id].bearing = new_bearing
+		contacts[id].distance = new_distance
 		contacts[id].strength = float(data.strength)
 		contacts[id].type = data.type
 		contacts[id].age = 0
