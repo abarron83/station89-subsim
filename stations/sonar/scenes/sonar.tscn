@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://brq4b8gn23d5u"]
+[gd_scene format=3 uid="uid://cmslmbunjf30w"]
 
 [ext_resource type="Script" uid="uid://bvjuvq3o2lh5v" path="res://scripts/sonar_display.gd" id="1_wgn7y"]
 
-[node name="Sonar" type="Node2D" unique_id=1046214451]
+[node name="Sonar" type="Node2D" unique_id=2116743184]
 script = ExtResource("1_wgn7y")
