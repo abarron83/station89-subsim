@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://btmp4gqt0iv6x"]
+
+[ext_resource type="Script" uid="uid://0v0awixnttss" path="res://scripts/helm_display.gd" id="1_t3kmg"]
+
+[node name="Helm" type="Node2D" unique_id=1253093852]
+script = ExtResource("1_t3kmg")
